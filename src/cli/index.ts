@@ -76,7 +76,12 @@ function displayHelp(): void {
   console.log()
   console.log(chalk.cyan('  /help    ') + ' - Show this help message')
   console.log(chalk.cyan('  /config  ') + ' - Configure API keys')
-  console.log(chalk.cyan('  /auto    ') + ' - Toggle auto-approve mode (currently: ' + (isAutoApproveEnabled() ? chalk.green('ON') : chalk.red('OFF')) + ')')
+  console.log(
+    chalk.cyan('  /auto    ') +
+      ' - Toggle auto-approve mode (currently: ' +
+      (isAutoApproveEnabled() ? chalk.green('ON') : chalk.red('OFF')) +
+      ')',
+  )
   console.log(chalk.cyan('  /clear   ') + ' - Clear conversation history')
   console.log(chalk.cyan('  /exit    ') + ' - Exit the agent')
   console.log()

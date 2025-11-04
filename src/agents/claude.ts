@@ -141,9 +141,7 @@ export class ClaudeAgent {
               {
                 type: 'tool_result',
                 tool_use_id: block.id,
-                content: result.success
-                  ? result.output || JSON.stringify(result.data)
-                  : `Error: ${result.error}`,
+                content: result.success ? result.output || JSON.stringify(result.data) : `Error: ${result.error}`,
               },
             ] as any,
           })

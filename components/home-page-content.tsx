@@ -126,12 +126,6 @@ export function HomePageContent({
     maxDuration: number
     keepAlive: boolean
   }) => {
-    // Check if user is authenticated
-    if (!user) {
-      setShowSignInDialog(true)
-      return
-    }
-
     // Check if user has selected a repository
     if (!data.repoUrl) {
       toast.error('Please select a repository', {

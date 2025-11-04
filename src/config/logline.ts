@@ -39,10 +39,7 @@ export class LogLineClient {
   /**
    * Execute a boot kernel
    */
-  async boot<TInput = any, TOutput = any>(
-    bootFunctionId: string,
-    input: TInput,
-  ): Promise<ApiResponse<TOutput>> {
+  async boot<TInput = any, TOutput = any>(bootFunctionId: string, input: TInput): Promise<ApiResponse<TOutput>> {
     const response = await fetch(`${this.config.apiUrl}/boot`, {
       method: 'POST',
       headers: {

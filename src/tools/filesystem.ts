@@ -130,9 +130,7 @@ export const listDirectoryTool: Tool = {
       }
 
       const entries = await fs.readdir(dirPath, { withFileTypes: true })
-      const formatted = entries
-        .map((entry) => `${entry.isDirectory() ? '📁' : '📄'} ${entry.name}`)
-        .join('\n')
+      const formatted = entries.map((entry) => `${entry.isDirectory() ? '📁' : '📄'} ${entry.name}`).join('\n')
 
       return {
         success: true,

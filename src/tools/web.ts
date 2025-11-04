@@ -83,9 +83,7 @@ export const webSearchTool: Tool = {
         }
       }
 
-      const formatted = results
-        .map((r, i) => `${i + 1}. ${r.title}\n   ${r.snippet}\n   ${r.url}`)
-        .join('\n\n')
+      const formatted = results.map((r, i) => `${i + 1}. ${r.title}\n   ${r.snippet}\n   ${r.url}`).join('\n\n')
 
       return {
         success: true,
