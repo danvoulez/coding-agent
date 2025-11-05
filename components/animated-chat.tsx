@@ -5,6 +5,12 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ArrowUp, Loader2, User, Bot } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import {
+  saveChatToHistory,
+  updateChatInHistory,
+  generateChatTitle,
+  generateChatPreview,
+} from '@/lib/utils/chat-history'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -35,6 +41,27 @@ export function AnimatedChat({ taskId, initialPrompt }: AnimatedChatProps) {
   useEffect(() => {
     setTimeout(() => setHasAnimated(true), 100)
   }, [])
+
+  // Save to history on mount
+  useEffect(() => {
+    saveChatToHistory({
+      id: taskId,
+      title: generateChatTitle(initialPrompt),
+      preview: generateChatPreview(initialPrompt),
+      timestamp: new Date(),
+      messageCount: 1,
+    })
+  }, [taskId, initialPrompt])
+
+  // Update message count when messages change
+  useEffect(() => {
+    if (messages.length > 1) {
+      updateChatInHistory(taskId, {
+        messageCount: messages.length,
+        timestamp: new Date(),
+      })
+    }
+  }, [messages.length, taskId])
 
   // Simulate initial AI response
   useEffect(() => {

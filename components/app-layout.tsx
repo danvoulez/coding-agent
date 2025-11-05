@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, createContext, useContext, useCallback } from 'react'
-import { TaskSidebar } from '@/components/task-sidebar'
+import { ChatSidebar } from '@/components/chat-sidebar'
 import { Task } from '@/lib/db/schema'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Plus, Trash2 } from 'lucide-react'
@@ -96,6 +96,9 @@ function SidebarLoader({ width }: { width: number }) {
 export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, initialIsMobile }: AppLayoutProps) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const currentChatId = searchParams?.get('conversation') || undefined
   // Initialize sidebar state based on user agent and preferences
   // On mobile (from user agent): always closed
   // On desktop: use saved preference or default to open
@@ -107,7 +110,6 @@ export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, i
   const [isResizing, setIsResizing] = useState(false)
   const [isDesktop, setIsDesktop] = useState(!initialIsMobile)
   const [hasMounted, setHasMounted] = useState(false)
-  const router = useRouter()
 
   // Update sidebar width and save to cookie
   const updateSidebarWidth = (newWidth: number) => {
@@ -350,7 +352,32 @@ export function AppLayout({ children, initialSidebarWidth, initialSidebarOpen, i
               {isLoading ? (
                 <SidebarLoader width={sidebarWidth} />
               ) : (
-                <TaskSidebar tasks={tasks} onTaskSelect={handleTaskSelect} width={sidebarWidth} />
+                <div className="h-full border-r bg-muted px-2 md:px-3 pb-3 pt-3 md:pt-5.5 overflow-y-auto">
+                  <div className="mb-3 md:mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex-1" />
+                      <div className="flex items-center gap-1">
+                        <Link href="/">
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="New Chat">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                    {/* Tabs */}
+                    <div className="flex items-center gap-1 px-1">
+                      <button className="text-xs font-medium uppercase tracking-wide transition-colors px-2 py-1 rounded text-foreground bg-accent">
+                        Chats
+                      </button>
+                      <Link href="/repos/new">
+                        <button className="text-xs font-medium uppercase tracking-wide transition-colors px-2 py-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent/50">
+                          Repos
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+                  <ChatSidebar currentChatId={currentChatId} />
+                </div>
               )}
             </div>
           </div>
