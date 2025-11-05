@@ -72,26 +72,46 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log('Received request body:', body)
 
     // Use provided ID or generate a new one
     const taskId = body.id || generateId(12)
-    const validatedData = insertTaskSchema.parse({
-      ...body,
-      id: taskId,
-      userId: userId,
-      status: 'pending',
-      progress: 0,
-      logs: [],
-    })
 
-    // Insert the task into the database - ensure id is definitely present
-    const [newTask] = await db
-      .insert(tasks)
-      .values({
-        ...validatedData,
-        id: taskId, // Ensure id is always present
+    // Declare variables outside try-catch so they're accessible in after() blocks
+    let validatedData: any
+    let newTask: any
+
+    try {
+      validatedData = insertTaskSchema.parse({
+        ...body,
+        id: taskId,
+        userId: userId,
+        status: 'pending',
+        progress: 0,
+        logs: [],
       })
-      .returning()
+      console.log('Validated data:', validatedData)
+
+      // Insert the task into the database - ensure id is definitely present
+      ;[newTask] = await db
+        .insert(tasks)
+        .values({
+          ...validatedData,
+          id: taskId, // Ensure id is always present
+        })
+        .returning()
+
+      console.log('Task created successfully:', newTask.id)
+    } catch (validationError) {
+      console.error('Validation or DB error:', validationError)
+      return NextResponse.json(
+        {
+          error: 'Validation failed',
+          message: validationError instanceof Error ? validationError.message : 'Invalid task data',
+        },
+        { status: 400 },
+      )
+    }
 
     // Generate AI branch name after response is sent (non-blocking)
     after(async () => {
