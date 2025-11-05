@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { TaskForm } from '@/components/task-form'
 import { HomePageHeader } from '@/components/home-page-header'
-import { SimpleChat } from '@/components/simple-chat'
+import { TaskPageClient } from '@/components/task-page-client'
 import { toast } from 'sonner'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTasks } from '@/components/app-layout'
@@ -46,10 +46,9 @@ export function HomePageContent({
   const [loadingVercel, setLoadingVercel] = useState(false)
   const [loadingGitHub, setLoadingGitHub] = useState(false)
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
-  const [initialPrompt, setInitialPrompt] = useState<string>('')
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { refreshTasks } = useTasks()
+  const { refreshTasks, addTaskOptimistically } = useTasks()
   const setTaskPrompt = useSetAtom(taskPromptAtom)
 
   // Check which auth providers are enabled
@@ -145,15 +144,116 @@ export function HomePageContent({
 
     setIsSubmitting(true)
 
-    // Simply start chat - no task creation
-    const conversationId = 'chat-' + Date.now()
-    setCurrentConversationId(conversationId)
-    setInitialPrompt(data.prompt)
+    // Check if this is multi-agent mode with multiple models selected
+    const isMultiAgent = data.selectedAgent === 'multi-agent' && data.selectedModels && data.selectedModels.length > 0
 
-    // Update URL
-    window.history.pushState({}, '', `/?conversation=${conversationId}`)
+    if (isMultiAgent) {
+      // Create multiple tasks, one for each selected model
+      const taskIds: string[] = []
+      const tasksData = data.selectedModels!.map((modelValue) => {
+        // Parse agent:model format
+        const [agent, model] = modelValue.split(':')
+        const { id } = addTaskOptimistically({
+          prompt: data.prompt,
+          repoUrl: data.repoUrl,
+          selectedAgent: agent,
+          selectedModel: model,
+          installDependencies: data.installDependencies,
+          maxDuration: data.maxDuration,
+        })
+        taskIds.push(id)
+        return {
+          id,
+          prompt: data.prompt,
+          repoUrl: data.repoUrl,
+          selectedAgent: agent,
+          selectedModel: model,
+          installDependencies: data.installDependencies,
+          maxDuration: data.maxDuration,
+          keepAlive: data.keepAlive,
+        }
+      })
 
-    setIsSubmitting(false)
+      // Navigate to the first task
+      router.push(`/tasks/${taskIds[0]}`)
+
+      try {
+        // Create all tasks in parallel
+        const responses = await Promise.all(
+          tasksData.map((taskData) =>
+            fetch('/api/tasks', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(taskData),
+            }),
+          ),
+        )
+
+        const successCount = responses.filter((r) => r.ok).length
+        const failCount = responses.length - successCount
+
+        if (successCount === responses.length) {
+          toast.success(`${successCount} tasks created successfully!`)
+        } else if (successCount > 0) {
+          toast.warning(`${successCount} tasks created, ${failCount} failed`)
+        } else {
+          toast.error('Failed to create tasks')
+        }
+
+        // Refresh sidebar to get the real task data from server
+        await refreshTasks()
+      } catch (error) {
+        console.error('Error creating tasks:', error)
+        toast.error('Failed to create tasks')
+        await refreshTasks()
+      } finally {
+        setIsSubmitting(false)
+      }
+    } else {
+      // Single task creation (original behavior)
+      const { id } = addTaskOptimistically(data)
+
+      // DON'T navigate away - stay on home page and show chat interface
+      setCurrentConversationId(id)
+
+      try {
+        console.log('Creating conversation with data:', { ...data, id })
+
+        const response = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...data, id }), // Include the pre-generated ID
+        })
+
+        console.log('Response status:', response.status)
+
+        if (response.ok) {
+          // Update URL without full page reload to show conversation ID
+          window.history.pushState({}, '', `/?conversation=${id}`)
+          await refreshTasks()
+        } else {
+          const error = await response.json()
+          console.error('API Error:', error)
+          // Show detailed message for rate limits, or generic error message
+          toast.error(error.message || error.error || 'Failed to create conversation')
+          // Reset conversation on error
+          setCurrentConversationId(null)
+          await refreshTasks()
+        }
+      } catch (error) {
+        console.error('Error creating task:', error)
+        toast.error('Failed to create conversation')
+        // Reset conversation on error
+        setCurrentConversationId(null)
+        await refreshTasks()
+      } finally {
+        setIsSubmitting(false)
+      }
+    }
   }
 
   const handleVercelSignIn = async () => {
@@ -202,9 +302,13 @@ export function HomePageContent({
         </>
       ) : (
         // Show chat interface when conversation active
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <SimpleChat conversationId={currentConversationId} initialPrompt={initialPrompt} />
-        </div>
+        <TaskPageClient
+          taskId={currentConversationId}
+          user={user}
+          authProvider={null}
+          initialStars={initialStars}
+          maxSandboxDuration={maxSandboxDuration}
+        />
       )}
 
       {/* Sign In Dialog */}
