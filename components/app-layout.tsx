@@ -54,11 +54,11 @@ function SidebarLoader({ width }: { width: number }) {
         <div className="flex items-center justify-between mb-2">
           <div className="flex-1" />
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={true} title="Delete Tasks">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={true} title="Delete Chats">
               <Trash2 className="h-4 w-4" />
             </Button>
             <Link href="/">
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="New Task">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="New Chat">
                 <Plus className="h-4 w-4" />
               </Button>
             </Link>
@@ -70,7 +70,7 @@ function SidebarLoader({ width }: { width: number }) {
             className="text-xs font-medium uppercase tracking-wide transition-colors px-2 py-1 rounded text-foreground bg-accent"
             disabled
           >
-            Tasks
+            Chats
           </button>
           <button
             className="text-xs font-medium uppercase tracking-wide transition-colors px-2 py-1 rounded text-muted-foreground hover:text-foreground hover:bg-accent/50"

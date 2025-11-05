@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { TaskForm } from '@/components/task-form'
 import { HomePageHeader } from '@/components/home-page-header'
+import { TaskPageClient } from '@/components/task-page-client'
 import { toast } from 'sonner'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTasks } from '@/components/app-layout'
@@ -44,6 +45,7 @@ export function HomePageContent({
   const [showSignInDialog, setShowSignInDialog] = useState(false)
   const [loadingVercel, setLoadingVercel] = useState(false)
   const [loadingGitHub, setLoadingGitHub] = useState(false)
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { refreshTasks, addTaskOptimistically } = useTasks()
@@ -51,6 +53,14 @@ export function HomePageContent({
 
   // Check which auth providers are enabled
   const { github: hasGitHub, vercel: hasVercel } = getEnabledAuthProviders()
+
+  // Check for conversation ID in URL on mount
+  useEffect(() => {
+    const conversationParam = searchParams.get('conversation')
+    if (conversationParam) {
+      setCurrentConversationId(conversationParam)
+    }
+  }, [searchParams])
 
   // Show toast if GitHub was connected (user was already logged in)
   useEffect(() => {
@@ -205,8 +215,8 @@ export function HomePageContent({
       // Single task creation (original behavior)
       const { id } = addTaskOptimistically(data)
 
-      // Navigate to the new task page immediately
-      router.push(`/tasks/${id}`)
+      // DON'T navigate away - stay on home page and show chat interface
+      setCurrentConversationId(id)
 
       try {
         const response = await fetch('/api/tasks', {
@@ -218,21 +228,23 @@ export function HomePageContent({
         })
 
         if (response.ok) {
-          toast.success('Task created successfully!')
-          // Refresh sidebar to get the real task data from server
+          // Update URL without full page reload to show conversation ID
+          window.history.pushState({}, '', `/?conversation=${id}`)
           await refreshTasks()
         } else {
           const error = await response.json()
           // Show detailed message for rate limits, or generic error message
           toast.error(error.message || error.error || 'Failed to create task')
-          // TODO: Remove the optimistic task on error
-          await refreshTasks() // For now, just refresh to remove the optimistic task
+          // Reset conversation on error
+          setCurrentConversationId(null)
+          await refreshTasks()
         }
       } catch (error) {
         console.error('Error creating task:', error)
         toast.error('Failed to create task')
-        // TODO: Remove the optimistic task on error
-        await refreshTasks() // For now, just refresh to remove the optimistic task
+        // Reset conversation on error
+        setCurrentConversationId(null)
+        await refreshTasks()
       } finally {
         setIsSubmitting(false)
       }
@@ -250,35 +262,51 @@ export function HomePageContent({
   }
 
   return (
-    <div className="flex-1 bg-background flex flex-col">
-      <div className="p-3">
-        <HomePageHeader
-          selectedOwner={selectedOwner}
-          selectedRepo={selectedRepo}
-          onOwnerChange={handleOwnerChange}
-          onRepoChange={handleRepoChange}
-          user={user}
-          initialStars={initialStars}
-        />
-      </div>
+    <div className="flex-1 bg-background flex flex-col h-full overflow-hidden">
+      {!currentConversationId ? (
+        // Show welcome/form interface when no conversation
+        <>
+          <div className="p-3">
+            <HomePageHeader
+              selectedOwner={selectedOwner}
+              selectedRepo={selectedRepo}
+              onOwnerChange={handleOwnerChange}
+              onRepoChange={handleRepoChange}
+              user={user}
+              initialStars={initialStars}
+            />
+          </div>
 
-      <div className="flex-1 flex items-center justify-center px-6 sm:px-8 md:px-12 lg:px-16 pb-20 md:pb-8">
-        <div className="w-full max-w-3xl">
-          <TaskForm
-            onSubmit={handleTaskSubmit}
-            isSubmitting={isSubmitting}
-            selectedOwner={selectedOwner}
-            selectedRepo={selectedRepo}
-            initialInstallDependencies={initialInstallDependencies}
-            initialMaxDuration={initialMaxDuration}
-            initialKeepAlive={initialKeepAlive}
+          <div className="flex-1 flex items-center justify-center px-6 sm:px-8 md:px-12 lg:px-16 pb-20 md:pb-8">
+            <div className="w-full max-w-3xl">
+              <TaskForm
+                onSubmit={handleTaskSubmit}
+                isSubmitting={isSubmitting}
+                selectedOwner={selectedOwner}
+                selectedRepo={selectedRepo}
+                initialInstallDependencies={initialInstallDependencies}
+                initialMaxDuration={initialMaxDuration}
+                initialKeepAlive={initialKeepAlive}
+                maxSandboxDuration={maxSandboxDuration}
+              />
+            </div>
+          </div>
+
+          {/* Mobile Footer with Stars and Deploy Button - Only show when logged in */}
+          {user && <HomePageMobileFooter initialStars={initialStars} />}
+        </>
+      ) : (
+        // Show chat interface when conversation active
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <TaskPageClient
+            taskId={currentConversationId}
+            user={user}
+            authProvider={null}
+            initialStars={initialStars}
             maxSandboxDuration={maxSandboxDuration}
           />
         </div>
-      </div>
-
-      {/* Mobile Footer with Stars and Deploy Button - Only show when logged in */}
-      {user && <HomePageMobileFooter initialStars={initialStars} />}
+      )}
 
       {/* Sign In Dialog */}
       <Dialog open={showSignInDialog} onOpenChange={setShowSignInDialog}>
