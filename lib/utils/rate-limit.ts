@@ -6,6 +6,20 @@ import { getMaxMessagesPerDay } from '@/lib/db/settings'
 export async function checkRateLimit(
   userId: string,
 ): Promise<{ allowed: boolean; remaining: number; total: number; resetAt: Date }> {
+  // Guest users have unlimited access (no rate limiting)
+  if (userId === 'guest') {
+    const tomorrow = new Date()
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
+    tomorrow.setUTCHours(0, 0, 0, 0)
+
+    return {
+      allowed: true,
+      remaining: Infinity,
+      total: Infinity,
+      resetAt: tomorrow,
+    }
+  }
+
   // Get max messages per day for this user (user-specific > global > env var)
   const maxMessagesPerDay = await getMaxMessagesPerDay(userId)
 

@@ -383,8 +383,9 @@ export function TaskForm({
   return (
     <div className="w-full max-w-2xl mx-auto scale-90 sm:scale-95 md:scale-100">
       <div className="text-center mb-10 sm:mb-12">
-        <h1 className="text-3xl sm:text-4xl font-bold mb-3 sm:mb-4">Coding Agent Template</h1>
-        <p className="text-base sm:text-lg text-muted-foreground mb-2 px-4">
+        {/* Expanded view - show title and prompt */}
+        <h1 className="text-3xl sm:text-4xl font-bold mb-3 sm:mb-4">LogLine</h1>
+        <p className="text-base sm:text-lg text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto">
           Multi-agent AI coding platform powered by{' '}
           <a
             href="https://vercel.com/docs/sandbox"
