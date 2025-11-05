@@ -370,7 +370,7 @@ export function TaskForm({
 
     onSubmit({
       prompt: prompt.trim(),
-      repoUrl: selectedRepoData?.clone_url || '',
+      repoUrl: selectedRepoData?.clone_url || '', // Optional: tool calling works without repo
       selectedAgent,
       selectedModel,
       selectedModels: selectedAgent === 'multi-agent' ? selectedModels : undefined,
@@ -381,10 +381,10 @@ export function TaskForm({
   }
 
   return (
-    <div className="w-full max-w-2xl">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-4">Coding Agent Template</h1>
-        <p className="text-lg text-muted-foreground mb-2">
+    <div className="w-full max-w-2xl mx-auto scale-90 sm:scale-95 md:scale-100">
+      <div className="text-center mb-10 sm:mb-12">
+        <h1 className="text-3xl sm:text-4xl font-bold mb-3 sm:mb-4">Coding Agent Template</h1>
+        <p className="text-base sm:text-lg text-muted-foreground mb-2 px-4">
           Multi-agent AI coding platform powered by{' '}
           <a
             href="https://vercel.com/docs/sandbox"
@@ -407,7 +407,7 @@ export function TaskForm({
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div className="relative border rounded-2xl shadow-sm overflow-hidden bg-muted/30 cursor-text">
+        <div className="relative border border-border/50 rounded-2xl shadow-lg shadow-black/5 overflow-hidden bg-card/50 backdrop-blur-sm cursor-text hover:shadow-xl hover:shadow-black/10 transition-all duration-200">
           {/* Prompt Input */}
           <div className="relative bg-transparent">
             <Textarea
@@ -420,7 +420,7 @@ export function TaskForm({
               disabled={isSubmitting}
               required
               rows={4}
-              className="w-full border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-4 text-base !bg-transparent"
+              className="w-full border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-5 sm:p-6 text-sm sm:text-base !bg-transparent"
             />
           </div>
 

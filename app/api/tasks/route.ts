@@ -47,6 +47,13 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // TODO: Integrate LogLine CLI as a service for tool calling
+    // When LogLine service is ready, this endpoint will:
+    // 1. Create a task with optional repository (repo is no longer required)
+    // 2. Initialize LogLine CLI agent with tool calling capabilities
+    // 3. Stream responses back to client with tool execution results
+    // 4. Support both repo-based tasks AND standalone IDE-style sessions
+
     // Get user session
     const session = await getServerSession()
     if (!session?.user?.id) {

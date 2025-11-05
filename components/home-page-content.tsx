@@ -126,13 +126,8 @@ export function HomePageContent({
     maxDuration: number
     keepAlive: boolean
   }) => {
-    // Check if user has selected a repository
-    if (!data.repoUrl) {
-      toast.error('Please select a repository', {
-        description: 'Choose a GitHub repository to work with from the header.',
-      })
-      return
-    }
+    // Repository is now optional - support open IDE-style sessions
+    // If no repo selected, agent will work in standalone mode with tool calling
 
     // Clear the saved prompt since we're actually submitting it now
     setTaskPrompt('')
@@ -267,17 +262,19 @@ export function HomePageContent({
         />
       </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 pb-20 md:pb-4">
-        <TaskForm
-          onSubmit={handleTaskSubmit}
-          isSubmitting={isSubmitting}
-          selectedOwner={selectedOwner}
-          selectedRepo={selectedRepo}
-          initialInstallDependencies={initialInstallDependencies}
-          initialMaxDuration={initialMaxDuration}
-          initialKeepAlive={initialKeepAlive}
-          maxSandboxDuration={maxSandboxDuration}
-        />
+      <div className="flex-1 flex items-center justify-center px-6 sm:px-8 md:px-12 lg:px-16 pb-20 md:pb-8">
+        <div className="w-full max-w-3xl">
+          <TaskForm
+            onSubmit={handleTaskSubmit}
+            isSubmitting={isSubmitting}
+            selectedOwner={selectedOwner}
+            selectedRepo={selectedRepo}
+            initialInstallDependencies={initialInstallDependencies}
+            initialMaxDuration={initialMaxDuration}
+            initialKeepAlive={initialKeepAlive}
+            maxSandboxDuration={maxSandboxDuration}
+          />
+        </div>
       </div>
 
       {/* Mobile Footer with Stars and Deploy Button - Only show when logged in */}
