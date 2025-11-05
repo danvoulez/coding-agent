@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { TaskForm } from '@/components/task-form'
 import { HomePageHeader } from '@/components/home-page-header'
-import { TaskPageClient } from '@/components/task-page-client'
+import { AnimatedChat } from '@/components/animated-chat'
 import { toast } from 'sonner'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTasks } from '@/components/app-layout'
@@ -46,6 +46,7 @@ export function HomePageContent({
   const [loadingVercel, setLoadingVercel] = useState(false)
   const [loadingGitHub, setLoadingGitHub] = useState(false)
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null)
+  const [initialPrompt, setInitialPrompt] = useState<string>('')
   const router = useRouter()
   const searchParams = useSearchParams()
   const { refreshTasks, addTaskOptimistically } = useTasks()
@@ -217,6 +218,7 @@ export function HomePageContent({
 
       // DON'T navigate away - stay on home page and show chat interface
       setCurrentConversationId(id)
+      setInitialPrompt(data.prompt)
 
       try {
         console.log('Creating conversation with data:', { ...data, id })
@@ -301,14 +303,8 @@ export function HomePageContent({
           {user && <HomePageMobileFooter initialStars={initialStars} />}
         </>
       ) : (
-        // Show chat interface when conversation active
-        <TaskPageClient
-          taskId={currentConversationId}
-          user={user}
-          authProvider={null}
-          initialStars={initialStars}
-          maxSandboxDuration={maxSandboxDuration}
-        />
+        // Show animated chat interface when conversation active
+        <AnimatedChat taskId={currentConversationId} initialPrompt={initialPrompt} />
       )}
 
       {/* Sign In Dialog */}
