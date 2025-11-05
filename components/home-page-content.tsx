@@ -219,6 +219,8 @@ export function HomePageContent({
       setCurrentConversationId(id)
 
       try {
+        console.log('Creating conversation with data:', { ...data, id })
+
         const response = await fetch('/api/tasks', {
           method: 'POST',
           headers: {
@@ -227,21 +229,24 @@ export function HomePageContent({
           body: JSON.stringify({ ...data, id }), // Include the pre-generated ID
         })
 
+        console.log('Response status:', response.status)
+
         if (response.ok) {
           // Update URL without full page reload to show conversation ID
           window.history.pushState({}, '', `/?conversation=${id}`)
           await refreshTasks()
         } else {
           const error = await response.json()
+          console.error('API Error:', error)
           // Show detailed message for rate limits, or generic error message
-          toast.error(error.message || error.error || 'Failed to create task')
+          toast.error(error.message || error.error || 'Failed to create conversation')
           // Reset conversation on error
           setCurrentConversationId(null)
           await refreshTasks()
         }
       } catch (error) {
         console.error('Error creating task:', error)
-        toast.error('Failed to create task')
+        toast.error('Failed to create conversation')
         // Reset conversation on error
         setCurrentConversationId(null)
         await refreshTasks()

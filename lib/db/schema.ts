@@ -118,7 +118,12 @@ export const insertTaskSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
   prompt: z.string().min(1, 'Prompt is required'),
   title: z.string().optional(),
-  repoUrl: z.string().url('Must be a valid URL').optional(),
+  repoUrl: z
+    .string()
+    .url('Must be a valid URL')
+    .optional()
+    .or(z.literal(''))
+    .transform((val) => (val === '' ? undefined : val)),
   selectedAgent: z.enum(['claude', 'codex', 'copilot', 'cursor', 'gemini', 'opencode']).default('claude'),
   selectedModel: z.string().optional(),
   installDependencies: z.boolean().default(false),
