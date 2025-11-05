@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ArrowUp, Loader2, User, Bot } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useTask } from '@/lib/hooks/use-task'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -19,7 +18,6 @@ interface AnimatedChatProps {
 }
 
 export function AnimatedChat({ taskId, initialPrompt }: AnimatedChatProps) {
-  const { task } = useTask(taskId)
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'user',
@@ -28,7 +26,7 @@ export function AnimatedChat({ taskId, initialPrompt }: AnimatedChatProps) {
     },
   ])
   const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [hasAnimated, setHasAnimated] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -38,27 +36,20 @@ export function AnimatedChat({ taskId, initialPrompt }: AnimatedChatProps) {
     setTimeout(() => setHasAnimated(true), 100)
   }, [])
 
-  // Simulate AI response (replace with real API later)
+  // Simulate initial AI response
   useEffect(() => {
-    if (task && task.logs && task.logs.length > 0) {
-      // Extract messages from task logs
-      const aiMessages = task.logs
-        .filter((log) => log.message && log.message.trim())
-        .map((log) => ({
-          role: 'assistant' as const,
-          content: log.message,
-          timestamp: log.timestamp ? new Date(log.timestamp) : new Date(),
-        }))
-
-      if (aiMessages.length > messages.filter((m) => m.role === 'assistant').length) {
-        setMessages((prev) => {
-          const userMessages = prev.filter((m) => m.role === 'user')
-          return [...userMessages, ...aiMessages]
-        })
-        setIsLoading(false)
-      }
-    }
-  }, [task, messages])
+    const timer = setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `Olá! Recebi sua solicitação: "${initialPrompt}". Estou processando e vou começar a trabalhar nisso. Este é um chat em tempo real - você pode acompanhar meu progresso aqui.`,
+          timestamp: new Date(),
+        },
+      ])
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [initialPrompt])
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -87,25 +78,18 @@ export function AnimatedChat({ taskId, initialPrompt }: AnimatedChatProps) {
     setInput('')
     setIsLoading(true)
 
-    // TODO: Send to API
-    try {
-      const response = await fetch(`/api/tasks/${taskId}/continue`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    // Simulate AI response (replace with real LogLine API integration)
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `Entendi sua solicitação: "${userMessage.content}". Vou processar isso. (Integração com LogLine API em breve!)`,
+          timestamp: new Date(),
         },
-        body: JSON.stringify({
-          message: userMessage.content,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to send message')
-      }
-    } catch (error) {
-      console.error('Error sending message:', error)
+      ])
       setIsLoading(false)
-    }
+    }, 2000)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

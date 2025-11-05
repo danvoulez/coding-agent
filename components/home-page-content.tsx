@@ -213,48 +213,33 @@ export function HomePageContent({
         setIsSubmitting(false)
       }
     } else {
-      // Single task creation (original behavior)
-      const { id } = addTaskOptimistically(data)
+      // Single chat creation - simplified without database
+      const id = 'chat-' + Date.now()
 
-      // DON'T navigate away - stay on home page and show chat interface
+      // Show chat interface immediately
       setCurrentConversationId(id)
       setInitialPrompt(data.prompt)
 
-      try {
-        console.log('Creating conversation with data:', { ...data, id })
+      // Update URL
+      window.history.pushState({}, '', `/?conversation=${id}`)
 
-        const response = await fetch('/api/tasks', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ...data, id }), // Include the pre-generated ID
+      setIsSubmitting(false)
+
+      // Optional: Still create in background for history, but don't block UI
+      fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, id }),
+      })
+        .then(async (response) => {
+          if (response.ok) {
+            await refreshTasks()
+          }
         })
-
-        console.log('Response status:', response.status)
-
-        if (response.ok) {
-          // Update URL without full page reload to show conversation ID
-          window.history.pushState({}, '', `/?conversation=${id}`)
-          await refreshTasks()
-        } else {
-          const error = await response.json()
-          console.error('API Error:', error)
-          // Show detailed message for rate limits, or generic error message
-          toast.error(error.message || error.error || 'Failed to create conversation')
-          // Reset conversation on error
-          setCurrentConversationId(null)
-          await refreshTasks()
-        }
-      } catch (error) {
-        console.error('Error creating task:', error)
-        toast.error('Failed to create conversation')
-        // Reset conversation on error
-        setCurrentConversationId(null)
-        await refreshTasks()
-      } finally {
-        setIsSubmitting(false)
-      }
+        .catch((error) => {
+          console.error('Background task creation failed:', error)
+          // Don't show error to user, chat still works
+        })
     }
   }
 
