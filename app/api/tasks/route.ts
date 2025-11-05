@@ -25,17 +25,15 @@ import { getMaxSandboxDuration } from '@/lib/db/settings'
 
 export async function GET() {
   try {
-    // Get user session
+    // Get user session (optional - guests can view their tasks too)
     const session = await getServerSession()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const userId = session?.user?.id || 'guest'
 
     // Get tasks for this user only (exclude soft-deleted tasks)
     const userTasks = await db
       .select()
       .from(tasks)
-      .where(and(eq(tasks.userId, session.user.id), isNull(tasks.deletedAt)))
+      .where(and(eq(tasks.userId, userId), isNull(tasks.deletedAt)))
       .orderBy(desc(tasks.createdAt))
 
     return NextResponse.json({ tasks: userTasks })
@@ -54,14 +52,12 @@ export async function POST(request: NextRequest) {
     // 3. Stream responses back to client with tool execution results
     // 4. Support both repo-based tasks AND standalone IDE-style sessions
 
-    // Get user session
+    // Get user session (optional - support guest users for open IDE-style sessions)
     const session = await getServerSession()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const userId = session?.user?.id || 'guest'
 
     // Check rate limit
-    const rateLimit = await checkRateLimit(session.user.id)
+    const rateLimit = await checkRateLimit(userId)
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
@@ -82,7 +78,7 @@ export async function POST(request: NextRequest) {
     const validatedData = insertTaskSchema.parse({
       ...body,
       id: taskId,
-      userId: session.user.id,
+      userId: userId,
       status: 'pending',
       progress: 0,
       logs: [],
@@ -222,7 +218,7 @@ export async function POST(request: NextRequest) {
     const userGithubToken = await getUserGitHubToken()
     const githubUser = await getGitHubUser()
     // Get max sandbox duration for this user (user-specific > global > env var)
-    const maxSandboxDuration = await getMaxSandboxDuration(session.user.id)
+    const maxSandboxDuration = await getMaxSandboxDuration(userId)
 
     // Process the task asynchronously with timeout
     // CRITICAL: Wrap in after() to ensure Vercel doesn't kill the function after response
@@ -739,11 +735,9 @@ async function processTask(
 
 export async function DELETE(request: NextRequest) {
   try {
-    // Check authentication
+    // Check authentication (optional - guests can delete their tasks)
     const session = await getServerSession()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const userId = session?.user?.id || 'guest'
 
     const url = new URL(request.url)
     const action = url.searchParams.get('action')
@@ -783,7 +777,7 @@ export async function DELETE(request: NextRequest) {
 
     // Delete tasks based on conditions AND user ownership
     const statusClause = statusConditions.length === 1 ? statusConditions[0] : or(...statusConditions)
-    const whereClause = and(statusClause, eq(tasks.userId, session.user.id))
+    const whereClause = and(statusClause, eq(tasks.userId, userId))
     const deletedTasks = await db.delete(tasks).where(whereClause).returning()
 
     // Build response message
